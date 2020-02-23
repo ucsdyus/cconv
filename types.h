@@ -5,15 +5,15 @@
 #include <cmath>
 #include <torch/extension.h>
 
-namespace fastbatch {
+namespace fastpatch {
 
-using NeighborList_t = std::vector<torch::Tensor>;
-using WeightList_t = std::vector<torch::Tensor>;
+using NeighborList_t = torch::Tensor;  // Ns
+using WeightList_t = torch::Tensor;  // Ns x S
 using NearNeighbor_t = std::pair<NeighborList, WeightList>;
 using NnList_t = std::vector<NearNeighbor_t>;
 
 #define __hd__ __host__ __device__
 
-}  // namespace fastbatch
+}  // namespace fastpatch
 
 #endif  // TYPES_H_

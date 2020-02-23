@@ -11,9 +11,9 @@ print("cc sources", cc_sources)
 print("cu sources", cu_sources)
 
 
-setup(name="FastBatch",
+setup(name="FastPatch",
       ext_modules=[CUDAExtension(
-          "fastbatch_cuda", sources=cc_sources + cu_sources,
+          "fastpatch_cuda", sources=cc_sources + cu_sources,
           extra_compile_args={
               "cxx": ["/O2", "/w", "/std:c++14"],
               "nvcc": ["-O3", "--ptxas-options=-v", "-w", "--std=c++14"]})],

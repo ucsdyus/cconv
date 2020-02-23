@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import fastbatch as fb
+import fastpatch as fp
 
 
 class CConv(nn.Module):
@@ -21,12 +21,12 @@ class CConv(nn.Module):
     def set_geometry(nn_list, maxsize):
         CConv.NnList = nn_list
         CConv.MaxSize = maxsize
-        fb.FeatBatchFn.set_maxsize(maxsize)
-        CConv.SelectMat = fb.raw_batch(nn_list, maxsize)  # N x Ns x S -> N x M x S
+        fp.FeatPatchFn.set_maxsize(maxsize)
+        CConv.SelectMat = fp.selection_patch(nn_list, maxsize)  # N x Ns x S -> N x M x S
 
     def forward(self, feat_in):
-        batch_feat = fb.feat_batch(feat_in, self.NnList).view(-1, self.MaxSize, self.ch_in, 1)
-        batch_weight = torch.matmul(
+        patch_feat = fp.feat_patch(feat_in, self.NnList).view(-1, self.MaxSize, self.ch_in, 1)
+        patch_weight = torch.matmul(
             self.SelectMat, self.weight).view(-1, self.MaxSize, self.ch_out, self.ch_in)
-        feat_out = torch.matmul(batch_weight, batch_feat).sum(axis=1)
+        feat_out = torch.matmul(patch_weight, patch_feat).sum(axis=1)
         return feat_out

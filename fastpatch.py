@@ -1,34 +1,34 @@
 
 import torch
 from torch.autograd import Function
-import fastbatch_cuda as fb_cuda
+import fastpatch_cuda as fp_cuda
 
 
-class FeatBatchFn(Function):
+class FeatPatchFn(Function):
     MaxSize = 200
 
     @staticmethod
     def set_maxsize(val):
-        FeatBatchFn.MaxSize = val
+        FeatPatchFn.MaxSize = val
 
     @staticmethod
     def forward(ctx, feat, nn_list):
         ctx.save_for_backward(nn_list)
-        batchfeat = fb_cuda.fb_forward(feat, nn_list)
-        return batchfeat
+        patchfeat = fp_cuda.feat_forward(feat, nn_list)
+        return patchfeat
 
     @staticmethod
-    def backward(ctx, grad_batchfeat):
+    def backward(ctx, grad_patchfeat):
         nn_list, = ctx.saved_tensors
         grad_feat = grad_nn_list = None
 
         if ctx.needs_input_grad[0]:
-            grad_feat = fb_cuda.fb_backward(grad_batchfeat, nn_list)
+            grad_feat = fp_cuda.feat_backward(grad_patchfeat, nn_list)
         return grad_feat, grad_nn_list
 
 
-feat_batch = FeatBatchFn.apply
+feat_patch = FeatPatchFn.apply
 
 
-def raw_batch(nn_list, maxsize):
+def selection_patch(nn_list, maxsize):
     return NotImplementedError
