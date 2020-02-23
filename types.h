@@ -10,6 +10,7 @@ namespace fastbatch {
 using NeighborList_t = std::vector<torch::Tensor>;
 using WeightList_t = std::vector<torch::Tensor>;
 using NearNeighbor_t = std::pair<NeighborList, WeightList>;
+using NnList_t = std::vector<NearNeighbor_t>;
 
 #define __hd__ __host__ __device__
 

@@ -4,9 +4,9 @@
 
 namespace fastbatch {
 
-torch::Tensor fb_forward(torch::Tensor feat, NearNeighbor_t& nn_list);
+torch::Tensor fb_forward(torch::Tensor feat, NnList_t& nn_list);
 
-torch::Tensor fb_backward(torch::Tensor grad_batchfeat, NearNeighbor_t& nn_list);
+torch::Tensor fb_backward(torch::Tensor grad_batchfeat, NnList_t& nn_list);
 
 }  // namespace fastbatch
 
