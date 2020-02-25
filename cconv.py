@@ -22,6 +22,7 @@ class CConv(nn.Module):
         CConv.NnList = nn_list
         CConv.MaxSize = maxsize
         fp.FeatPatchFn.set_maxsize(maxsize)
+        fp.FeatPatchFn.set_nnlist(nn_list)
         CConv.SelectMat = fp.selection_patch(nn_list, maxsize)  # N x Ns x S -> N x M x S
 
     def forward(self, feat_in):

@@ -6,25 +6,30 @@ import fastpatch_cuda as fp_cuda
 
 class FeatPatchFn(Function):
     MaxSize = 200
+    NnList = None
 
     @staticmethod
     def set_maxsize(val):
         FeatPatchFn.MaxSize = val
 
     @staticmethod
-    def forward(ctx, feat, nn_list):
-        ctx.save_for_backward(nn_list)
-        patchfeat = fp_cuda.feat_forward(feat, nn_list)
+    def set_nnlist(nn_list):
+        FeatPatchFn.NnList = nn_list
+
+    @staticmethod
+    def forward(ctx, feat):
+        patchfeat = fp_cuda.feat_forward(
+            feat, FeatPatchFn.NnList, FeatPatchFn.MaxSize)
         return patchfeat
 
     @staticmethod
     def backward(ctx, grad_patchfeat):
-        nn_list, = ctx.saved_tensors
-        grad_feat = grad_nn_list = None
+        grad_feat = None
 
         if ctx.needs_input_grad[0]:
-            grad_feat = fp_cuda.feat_backward(grad_patchfeat, nn_list)
-        return grad_feat, grad_nn_list
+            grad_feat = fp_cuda.feat_backward(
+                grad_patchfeat, FeatPatchFn.NnList, FeatPatchFn.MaxSize)
+        return grad_feat
 
 
 feat_patch = FeatPatchFn.apply
