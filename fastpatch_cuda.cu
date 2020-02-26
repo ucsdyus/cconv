@@ -23,35 +23,38 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 }  // namespace
 
 __global__ void feat_forward_kernel(int N, int maxsize, int Cin,
-    const NnList_t*  __restrict__ nn_list, const float* __restrict__  feat_data,
+    const Neighbor_t*  __restrict__ nn_list, const float* __restrict__  feat_data,
     float* __restrict__  featpatch_data) {
 
         int u = blockIdx.x;  // bi
         int N_RW = blockDim.x;
         int PATCH_STRIDE = maxsize * Cin;
 
+        // TODO(BUG): alling a __host__ from a __global__ function is not allowed
         int Ns = torch::size(nn_list[u], 0);
-        int* nn = nn_list[u].data_ptr<int>();
+        int* nn = nn_list[u].data_ptr<int>(); // Ns
 
         int ti = threadIdx.x;
         
         for (int i = ti; i < Ns; i += N_RW) {
             int v = nn[i];
+            // TODO(BUG): cudaMemcpy -> cudaMemcpyAsync
             cudaMemcpy(featpatch_data + u * PATCH_STRIDE + i * Cin, feat_data + v * Cin,
                 Cin * sizeof(float), cudaMemcpyDeviceToDevice);
         }
 }
 
 __global__ void feat_backward_kernel(int N, int maxsize, int Cin,
-    const GradNnList_t*  __restrict__ grad_nn_list, const float* __restrict__  grad_patchfeat,
+    const Neighbor_t*  __restrict__ grad_nn_list, const float* __restrict__  grad_patchfeat,
     float* __restrict__  grad_feat) {
 
         int u = blockIdx.x;  // bi
         int N_RW = blockDim.x;
         int PATCH_STRIDE = maxsize * Cin;
 
+        // TODO(BUG) host code
         int Ns = torch::size(grad_nn_list[u], 0);
-        int* grad_nn =  grad_nn_list[u]->data_ptr<int>();  // Ns x 2
+        int* grad_nn =  grad_nn_list[u].data_ptr<int>();  // Ns x 2
 
         int ti = threadIdx.x;
         int tj = threadIdx.y;
@@ -88,9 +91,9 @@ torch::Tensor feat_backward(torch::Tensor grad_patchfeat, GradNnList_t& grad_nn_
     CHECK_CUDA(grad_patchfeat);
 
     int N = grad_nn_list.size();
-    int Cin = torch::size(feat, 2);
+    int Cin = torch::size(grad_patchfeat, 2);  // N x maxsize x Cin x 1
 
-    torch::Tensor grad_feat = torch::zeros({N, Cin, 1}, feat.options());
+    torch::Tensor grad_feat = torch::zeros({N, Cin, 1}, grad_patchfeat.options());
 
     const dim3 block(THREAD_NUM, Cin);
     const dim3 grid(N);
@@ -104,31 +107,30 @@ torch::Tensor feat_backward(torch::Tensor grad_patchfeat, GradNnList_t& grad_nn_
 
 
 __global__ void get_selection_mat_kernel(
-    int maxsize, int S, const NwList_t* __restrict__ nw_list, float* __restrict__ select_mat) {
+    int maxsize, int S, const Weight_t* __restrict__ nw_list, float* __restrict__ select_mat) {
         int bi = blockIdx.x;
         int STRIDE = maxsize * S;
 
+        // TODO(BUG) host code
         int Ns = torch::size(nw_list[bi], 0);
         float* nw = nw_list[bi].data_ptr<float>();
 
+        // TODO(BUG) host code
         cudaMemcpy(select_mat + bi * STRIDE, nw,
             Ns * S * sizeof(float), cudaMemcpyDeviceToDevice);
 }
 
 
-torch::Tensor get_selection_mat(NnList_t& nn_list, NwList_t& nw_list, int maxsize) {
-    CHECK_CUDA(nn_list[0])/;
-    int N = nn_list.size();
-    int S =  torch::size(nw_list[0], 1);
+torch::Tensor get_selection_mat(int S, NnList_t& nn_list, NwList_t& nw_list, int maxsize) {
+    CHECK_CUDA(nw_list[0]);
+    int N = nw_list.size();
 
-    torch::Tensor select_mat = torch::zeros({N, maxsize, S}, feat.options());
+    torch::Tensor select_mat = torch::zeros({N, maxsize, S}, nw_list[0].options());
 
     const dim3 block(1);
     const dim3 grid(N);
     get_selection_mat_kernel<<<grid, block>>>(
-        N, maxsize, Cin, grad_nn_list.data(),
-        grad_patchfeat.data_ptr<float>(), grad_feat.data_ptr<float>());
-
+        maxsize, S, nw_list.data(), select_mat.data_ptr<float>());
     
     CHECK_RUNTIME_ERROR(cudaPeekAtLastError());
     return select_mat;
@@ -157,8 +159,8 @@ GradNnList_t grad_nn_list(NnList_t& nn_list) {
         
         int* grad_nn_ptr = grad_nn.data_ptr<int>();
         for (int i = 0; i < grad_nn_v.size(); ++i) {
-            grad_nn_ptr[i * 2] = grad_nn_v[i];
-            grad_nn_ptr[i * 2 + 1] = grad_nn_offset[i];
+            grad_nn_ptr[i * 2] = grad_nn_v[u][i];
+            grad_nn_ptr[i * 2 + 1] = grad_nn_offset[u][i];
         }
     }
     return grad_nn_list;
