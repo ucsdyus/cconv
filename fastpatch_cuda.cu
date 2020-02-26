@@ -22,6 +22,8 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 
 }  // namespace
 
+// function: (const) torch::PackedTensorAccessor32<scalar_t,3,torch::RestrictPtrTraits> tensor
+// pass args: tensor.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>()
 __global__ void feat_forward_kernel(int N, int maxsize, int Cin,
     const Neighbor_t*  __restrict__ nn_list, const float* __restrict__  feat_data,
     float* __restrict__  featpatch_data) {
@@ -32,14 +34,14 @@ __global__ void feat_forward_kernel(int N, int maxsize, int Cin,
 
         // TODO(BUG): alling a __host__ from a __global__ function is not allowed
         int Ns = torch::size(nn_list[u], 0);
+        // TODO(BUG) host code
         int* nn = nn_list[u].data_ptr<int>(); // Ns
 
         int ti = threadIdx.x;
         
         for (int i = ti; i < Ns; i += N_RW) {
             int v = nn[i];
-            // TODO(BUG): cudaMemcpy -> cudaMemcpyAsync
-            cudaMemcpy(featpatch_data + u * PATCH_STRIDE + i * Cin, feat_data + v * Cin,
+            cudaMemcpyAsync(featpatch_data + u * PATCH_STRIDE + i * Cin, feat_data + v * Cin,
                 Cin * sizeof(float), cudaMemcpyDeviceToDevice);
         }
 }
@@ -54,6 +56,7 @@ __global__ void feat_backward_kernel(int N, int maxsize, int Cin,
 
         // TODO(BUG) host code
         int Ns = torch::size(grad_nn_list[u], 0);
+        // TODO(BUG) host code
         int* grad_nn =  grad_nn_list[u].data_ptr<int>();  // Ns x 2
 
         int ti = threadIdx.x;
@@ -113,10 +116,10 @@ __global__ void get_selection_mat_kernel(
 
         // TODO(BUG) host code
         int Ns = torch::size(nw_list[bi], 0);
+        // TODO(BUG) host code
         float* nw = nw_list[bi].data_ptr<float>();
 
-        // TODO(BUG) host code
-        cudaMemcpy(select_mat + bi * STRIDE, nw,
+        cudaMemcpyAsync(select_mat + bi * STRIDE, nw,
             Ns * S * sizeof(float), cudaMemcpyDeviceToDevice);
 }
 
