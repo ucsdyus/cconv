@@ -1,32 +1,38 @@
 import torch
 import torch.nn as nn
+import torch.nn.init as init
 import fastpatch as fp
+import math
+
+
+class Params:
+    SpatialSize = None
+    SelectMat = None
 
 
 class CConv(nn.Module):
-    MaxSize = None
-    NnList = None
-    SelectMat = None
-
-    def __init__(self, spatial, ch_in, ch_out):
+    def __init__(self, ch_in, ch_out):
         super(CConv, self).__init__()
+        assert Params.SpatialSize is not None, "Set property first"
 
-        self.spatial = spatial
         self.ch_in = ch_in
         self.ch_out = ch_out
+        self.max_size = fp.Params.MaxSize
 
-        self.weight = nn.Parameter(torch.Tensor(spatial, ch_out * ch_in))
-    
-    @staticmethod
-    def set_geometry(nn_list, maxsize):
-        CConv.NnList = nn_list
-        CConv.MaxSize = maxsize
-        fp.FeatPatchFn.set_maxsize(maxsize)
-        CConv.SelectMat = fp.selection_patch(nn_list, maxsize)  # N x Ns x S -> N x M x S
+        self.weight = nn.Parameter(
+            torch.Tensor(1, 1, Params.SpatialSize, ch_out * ch_in), requires_grad=True)
+        
+        init.kaiming_uniform_(self.weight, a=math.sqrt(5))
 
     def forward(self, feat_in):
-        patch_feat = fp.feat_patch(feat_in, self.NnList).view(-1, self.MaxSize, self.ch_in, 1)
+        patch_feat = fp.feat_patch(feat_in).view(-1, self.max_size, self.ch_in, 1)  # N x M x Cin x 1
         patch_weight = torch.matmul(
-            self.SelectMat, self.weight).view(-1, self.MaxSize, self.ch_out, self.ch_in)
-        feat_out = torch.matmul(patch_weight, patch_feat).sum(axis=1)
+            Params.SelectMat, self.weight).view(-1, self.max_size, self.ch_out, self.ch_in)  # N x M x Cout x Cin
+        feat_out = torch.matmul(patch_weight, patch_feat).sum(axis=1).view(-1, self.ch_out, 1)
         return feat_out
+
+
+def set_property(spatial, nw_list):
+    assert fp.Params.MaxSize is not None, "Set fastpatch property first"
+    Params.SpatialSize = spatial
+    Params.SelectMat = fp.selection_mat_patch(nw_list, spatial)
