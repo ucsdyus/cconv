@@ -130,7 +130,7 @@ __global__ void get_selection_mat_kernel(int maxsize, int S,
 }
 
 
-torch::Tensor get_selection_mat(int S,  torch::Tensor nn_offset, torch::Tensor nw_list, int maxsize) {
+torch::Tensor get_selection_mat(torch::Tensor nn_offset, torch::Tensor nw_list, int maxsize, int S) {
     CHECK_CUDA(nn_offset);
     CHECK_CUDA(nw_list);
 
