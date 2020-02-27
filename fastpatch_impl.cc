@@ -12,7 +12,7 @@ torch::Tensor feat_forward(torch::Tensor feat, torch::Tensor nn_offset, torch::T
 torch::Tensor feat_backward(
     torch::Tensor grad_patchfeat, torch::Tensor grad_nn_offset, torch::Tensor grad_nn_list, int maxsize);
 
-torch::Tensor get_selection_mat(int S,  torch::Tensor nn_offset, torch::Tensor nw_list, int maxsize);
+torch::Tensor get_selection_mat(int S, torch::Tensor nn_offset, torch::Tensor nw_list, int maxsize);
 
 // grad_nn_offset (N x 2), grad_nn_list (N x Ns')
 std::pair<torch::Tensor, torch::Tensor> get_grad_nn_list(torch::Tensor nn_offset, torch::Tensor nn_list);

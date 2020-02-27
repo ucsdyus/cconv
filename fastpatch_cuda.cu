@@ -135,7 +135,7 @@ torch::Tensor get_selection_mat(int S,  torch::Tensor nn_offset, torch::Tensor n
     CHECK_CUDA(nw_list);
 
     int N = torch::size(nn_offset, 0) - 1;
-    torch::Tensor select_mat = torch::zeros({N, maxsize, S}, nw_list.options());
+    torch::Tensor select_mat = torch::zeros({N, maxsize, 1, S}, nw_list.options());
 
     const dim3 block(THREAD_NUM, S);
     const dim3 grid(N);

@@ -51,3 +51,19 @@ print("Grad Feature")
 print(grad_feat.size())
 for i in range(4):
     print(i, grad_feat[i])
+
+
+# Graph
+# 0: 1, 3
+# 1: 0
+# 2:
+# 3: 0
+nn_offset = torch.tensor([0, 2, 3, 3, 4], dtype=torch.int32).cuda()
+nw_list = torch.tensor(list(range(4 * 3)), dtype=torch.float32).cuda()
+
+select_mat = fastpatch_impl.get_selection_mat(3, nn_offset, nw_list, 2)  # 4 x 2 x 1 x 3
+
+print("Selection Matrix")
+print(select_mat.size())
+for i in range(4):
+    print(i, select_mat[i])
