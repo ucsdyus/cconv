@@ -25,9 +25,9 @@ class CConv(nn.Module):
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
 
     def forward(self, feat_in):
-        patch_feat = fp.feat_patch(feat_in).view(-1, self.max_size, self.ch_in, 1)
+        patch_feat = fp.feat_patch(feat_in).view(-1, self.max_size, self.ch_in, 1)  # N x M x Cin x 1
         patch_weight = torch.matmul(
-            Params.SelectMat, self.weight).view(-1, self.max_size, self.ch_out, self.ch_in)
+            Params.SelectMat, self.weight).view(-1, self.max_size, self.ch_out, self.ch_in)  # N x M x Cout x Cin
         feat_out = torch.matmul(patch_weight, patch_feat).sum(axis=1).view(-1, self.ch_out, 1)
         return feat_out
 

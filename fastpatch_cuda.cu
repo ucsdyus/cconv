@@ -37,7 +37,7 @@ __global__ void feat_forward_kernel(int maxsize, int Cin,
 
         int ti = threadIdx.x;
         int tj = threadIdx.y;
-        for (int i = ti; i < Ns; i += N_RW) {
+        for (int i = ti; i < Ns && i < maxsize; i += N_RW) {
             int v = nn[i];
             patchfeat_data[u * PATCH_STRIDE + i * Cin + tj] = feat_data[v * Cin + tj];
         }
@@ -56,7 +56,7 @@ __global__ void feat_backward_kernel(int maxsize, int Cin,
         
         int ti = threadIdx.x;
         int tj = threadIdx.y;
-        for (int i = ti; i < Ns; i += N_RW) {
+        for (int i = ti; i < Ns && i < maxsize; i += N_RW) {
             int v = grad_nn[i * 2];
             int v_offset = grad_nn[i * 2 + 1];
             // printf("u, Ns, i, v, v_offset = %d %d %d %d %d\n", u, Ns, i, v, v_offset);
@@ -124,7 +124,7 @@ __global__ void get_selection_mat_kernel(int maxsize, int S,
 
         int ti = threadIdx.x;
         int tj = threadIdx.y;
-        for (int v = ti; v < Ns; v += N_RW) {
+        for (int v = ti; v < Ns && v < maxsize; v += N_RW) {
             select_mat[u * STRIDE + v * S + tj] = nw[v * S + tj];
         }
 }
