@@ -148,41 +148,41 @@ torch::Tensor get_selection_mat(torch::Tensor nn_offset, torch::Tensor nw_list, 
 }
 
 
-std::pair<torch::Tensor, torch::Tensor> get_grad_nn_list(torch::Tensor nn_offset, torch::Tensor nn_list) {
-    int N = torch::size(nn_offset, 0) - 1;
+// std::pair<torch::Tensor, torch::Tensor> get_grad_nn_list(torch::Tensor nn_offset, torch::Tensor nn_list) {
+//     int N = torch::size(nn_offset, 0) - 1;
 
-    std::vector<std::vector<int>> grad_nn_v(N);
-    std::vector<std::vector<int>> grad_v_offset(N);
+//     std::vector<std::vector<int>> grad_nn_v(N);
+//     std::vector<std::vector<int>> grad_v_offset(N);
 
-    const int* nn_offset_ptr = nn_offset.data_ptr<int>();
-    const int* nn_list_ptr = nn_list.data_ptr<int>();
+//     const int* nn_offset_ptr = nn_offset.data_ptr<int>();
+//     const int* nn_list_ptr = nn_list.data_ptr<int>();
 
-    for (int u = 0; u < N; ++u) {
-        int Ns = nn_offset_ptr[u + 1] - nn_offset_ptr[u];
-        const int* nn = nn_list_ptr + nn_offset_ptr[u];
+//     for (int u = 0; u < N; ++u) {
+//         int Ns = nn_offset_ptr[u + 1] - nn_offset_ptr[u];
+//         const int* nn = nn_list_ptr + nn_offset_ptr[u];
 
-        for (int j = 0; j < Ns; ++j) {
-            grad_nn_v[nn[j]].push_back(u);
-            grad_v_offset[nn[j]].push_back(j);
-        }
-    }
-    torch::Tensor grad_nn_offset = torch::zeros_like(nn_offset);
-    int* grad_nn_offset_ptr = grad_nn_offset.data_ptr<int>();
-    for (int i = 1; i <= N; ++i) {
-        grad_nn_offset_ptr[i] = grad_nn_offset_ptr[i - 1] + grad_nn_v[i - 1].size();
-    }
+//         for (int j = 0; j < Ns; ++j) {
+//             grad_nn_v[nn[j]].push_back(u);
+//             grad_v_offset[nn[j]].push_back(j);
+//         }
+//     }
+//     torch::Tensor grad_nn_offset = torch::zeros_like(nn_offset);
+//     int* grad_nn_offset_ptr = grad_nn_offset.data_ptr<int>();
+//     for (int i = 1; i <= N; ++i) {
+//         grad_nn_offset_ptr[i] = grad_nn_offset_ptr[i - 1] + grad_nn_v[i - 1].size();
+//     }
 
-    torch::Tensor grad_nn_list = torch::zeros(grad_nn_offset_ptr[N] * 2, nn_list.options());  // N x Ns x 2
-    int* grad_nn_list_ptr = grad_nn_list.data_ptr<int>();
-    for (int u = 0; u < N; ++u) {
-        int start = grad_nn_offset_ptr[u];
-        int Ns = grad_nn_offset_ptr[u + 1] - grad_nn_offset_ptr[u];
-        for (int i = 0; i < Ns; ++i) {
-            grad_nn_list_ptr[(start + i) * 2] = grad_nn_v[u][i];
-            grad_nn_list_ptr[(start + i) * 2 + 1] = grad_v_offset[u][i];
-        }
-    }
-    return {grad_nn_offset, grad_nn_list};
-}
+//     torch::Tensor grad_nn_list = torch::zeros(grad_nn_offset_ptr[N] * 2, nn_list.options());  // N x Ns x 2
+//     int* grad_nn_list_ptr = grad_nn_list.data_ptr<int>();
+//     for (int u = 0; u < N; ++u) {
+//         int start = grad_nn_offset_ptr[u];
+//         int Ns = grad_nn_offset_ptr[u + 1] - grad_nn_offset_ptr[u];
+//         for (int i = 0; i < Ns; ++i) {
+//             grad_nn_list_ptr[(start + i) * 2] = grad_nn_v[u][i];
+//             grad_nn_list_ptr[(start + i) * 2 + 1] = grad_v_offset[u][i];
+//         }
+//     }
+//     return {grad_nn_offset, grad_nn_list};
+// }
 
 }  // namespace fastpatch
