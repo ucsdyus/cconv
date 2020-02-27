@@ -38,3 +38,9 @@ loss.backward()
 print("feat grad")
 for i in range(4):
     print(i, feat.grad[i])
+
+nw_list = torch.tensor(list(range(4 * 3)), dtype=torch.float32).cuda()  # spatial = 3
+select_mat = fp.selection_mat_patch(nw_list, 3)
+print("Select Mat", select_mat.size())
+for i in range(4):
+    print(i, select_mat[i])
