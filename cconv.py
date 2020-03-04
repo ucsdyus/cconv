@@ -41,8 +41,8 @@ class CConv(nn.Module):
 
 
 class CConvFixed(nn.Module):
-    def __init__(self, N, ch_in, ch_out, cconv_config):
-        super(CConv, self).__init__()
+    def __init__(self, ch_in, ch_out, cconv_config):
+        super(CConvFixed, self).__init__()
         assert cconv_config is not None, "Config cannot be None"
 
         self.config = cconv_config
@@ -57,10 +57,10 @@ class CConvFixed(nn.Module):
     def forward(self, fixed_in):
         # N x M x Cin x 1
         patch_fixed = fp.fixed_patch(fixed_in).view(
-            self.N, self.config.MaxSize, self.ch_in, 1)
+            -1, self.config.MaxSize, self.ch_in, 1)
         # N x M x Cout x Cin
         patch_weight = torch.matmul(
-            self.config.SelectMat, self.weight).view(self.N, self.config.MaxSize, self.ch_out, self.ch_in)
+            self.config.SelectMat, self.weight).view(-1, self.config.MaxSize, self.ch_out, self.ch_in)
         # N x Cout x 1
         fixed_out = torch.matmul(patch_weight, patch_fixed).sum(axis=1).view(-1, self.ch_out, 1)
         return fixed_out

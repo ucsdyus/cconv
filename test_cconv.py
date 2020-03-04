@@ -14,7 +14,7 @@ feat = torch.tensor(
 points_cconfig = cconv.CConvConfig(3, 2)  # Spatial=3, MaxSize=2
 # Share the same cconv config (cconfig)
 model = nn.Sequential(
-    cconv.CConv(3, 4, points_cconfig),
+    cconv.CConvFixed(3, 4, points_cconfig),
     nn.ReLU(),
     cconv.CConv(4, 1, points_cconfig))
 model.cuda()
@@ -36,6 +36,7 @@ grad_nn_offset = torch.tensor([0, 2, 3, 3, 4], dtype=torch.int32).cuda()
 grad_nn_list = torch.tensor([1, 0, 3, 0, 0, 0, 0, 1], dtype=torch.int32).cuda()
 
 fp.update_feat_config(2, nn_offset, nn_list, grad_nn_offset, grad_nn_list)
+fp.update_fixed_config(2, nn_offset, nn_list)
 points_cconfig.update(nn_offset, nw_list)
 # Iterate
 for i in range(10):
