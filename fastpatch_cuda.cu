@@ -74,7 +74,7 @@ torch::Tensor feat_forward(torch::Tensor feat, torch::Tensor nn_offset, torch::T
     CHECK_CUDA(nn_offset);
     CHECK_CUDA(nn_list);
     
-    int N = torch::size(feat, 0);
+    int N = torch::size(nn_offset, 0) - 1;
     int Cin = torch::size(feat, 1);
 
     torch::Tensor patchfeat = torch::zeros({N, maxsize, Cin, 1}, feat.options());
@@ -96,7 +96,7 @@ torch::Tensor feat_backward(
     CHECK_CUDA(grad_nn_offset);
     CHECK_CUDA(grad_nn_list);
 
-    int N = torch::size(grad_patchfeat, 0);
+    int N = torch::size(grad_nn_offset, 0) - 1;
     int Cin = torch::size(grad_patchfeat, 2);  // N x maxsize x Cin x 1
 
     torch::Tensor grad_feat = torch::zeros({N, Cin, 1}, grad_patchfeat.options());
