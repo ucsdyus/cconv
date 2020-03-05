@@ -30,6 +30,7 @@ class CConv(nn.Module):
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
 
     def forward(self, feat_in):
+        assert len(feat_in.size()) == 3, "inputs expect 3 dim get %d instead" % len(feat_in.size())
         # N x M x Cin x 1
         patch_feat = fp.feat_patch(feat_in).view(-1, self.config.MaxSize, self.ch_in, 1)
         # N x M x Cout x Cin
@@ -55,6 +56,7 @@ class CConvFixed(nn.Module):
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
 
     def forward(self, fixed_in):
+        assert len(fixed_in.size()) == 3, "inputs expect 3 dim get %d instead" % len(fixed_in.size())
         # N x M x Cin x 1
         patch_fixed = fp.fixed_patch(fixed_in).view(
             -1, self.config.MaxSize, self.ch_in, 1)
