@@ -5,7 +5,7 @@
 #include "types.h"
 
 #ifndef THREAD_NUM
-#define THREAD_NUM 32
+#define THREAD_NUM 8
 #endif  // THREAD_NUM
 
 namespace fastpatch {
