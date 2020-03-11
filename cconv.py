@@ -11,8 +11,8 @@ class CConvConfig(object):
         self.MaxSize = max_size
         self.SelectMat = None
 
-    def update(self, nn_offset, nw_list):
-        self.SelectMat = fp.selection_mat_patch(nn_offset, nw_list, self.MaxSize, self.SpatialSize)
+    def update(self, fp_config):
+        self.SelectMat = fp.selection_mat_patch(fp_config, self.MaxSize, self.SpatialSize)
 
 
 class CConv(nn.Module):
@@ -30,9 +30,9 @@ class CConv(nn.Module):
 
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
 
-    def forward(self, feat_in):
+    def forward(self, fp_config, feat_in):
         # N x M x Cin x 1
-        patch_feat = fp.feat_patch(feat_in).view(-1, self.config.MaxSize, self.ch_in, 1)
+        patch_feat = fp.feat_patch(fp_config, feat_in).view(-1, self.config.MaxSize, self.ch_in, 1)
         # N x M x Cout x Cin
         # patch_weight = torch.matmul(
         #     self.config.SelectMat, self.weight).view(-1, self.config.MaxSize, self.ch_out, self.ch_in)
@@ -58,9 +58,9 @@ class CConvFixed(nn.Module):
 
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
 
-    def forward(self, fixed_in):
+    def forward(self, fp_config, fixed_in):
         # N x M x Cin x 1
-        patch_fixed = fp.fixed_patch(fixed_in).view(
+        patch_fixed = fp.fixed_patch(fp_config, fixed_in).view(
             -1, self.config.MaxSize, self.ch_in, 1)
         # N x M x Cout x Cin
         # print(self.config.SelectMat.size())

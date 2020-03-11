@@ -4,9 +4,9 @@
 #include <torch/extension.h>
 #include "types.h"
 
-#ifndef THREAD_NUM
-#define THREAD_NUM 32
-#endif  // THREAD_NUM
+#ifndef MAX_THREAD_NUM
+#define MAX_THREAD_NUM 1024
+#endif  // MAX_THREAD_NUM
 
 namespace fastpatch {
 namespace {
@@ -79,7 +79,8 @@ torch::Tensor feat_forward(torch::Tensor feat, torch::Tensor nn_offset, torch::T
 
     torch::Tensor patchfeat = torch::zeros({N, maxsize, Cin, 1}, feat.options());
 
-    const dim3 block(THREAD_NUM, Cin);
+    int n_rw = MAX_THREAD_NUM / Cin;
+    const dim3 block(n_rw, Cin);
     const dim3 grid(N);
     feat_forward_kernel<<<grid, block>>>(
         maxsize, Cin, nn_offset.data_ptr<int>(), nn_list.data_ptr<int>(),
@@ -101,7 +102,8 @@ torch::Tensor feat_backward(
 
     torch::Tensor grad_feat = torch::zeros({N, Cin, 1}, grad_patchfeat.options());
 
-    const dim3 block(THREAD_NUM, Cin);
+    int n_rw = MAX_THREAD_NUM / Cin;
+    const dim3 block(n_rw, Cin);
     const dim3 grid(N);
     feat_backward_kernel<<<grid, block>>>(
         maxsize, Cin,
@@ -137,7 +139,8 @@ torch::Tensor get_selection_mat(torch::Tensor nn_offset, torch::Tensor nw_list, 
     int N = torch::size(nn_offset, 0) - 1;
     torch::Tensor select_mat = torch::zeros({N, maxsize, 1, S}, nw_list.options());
 
-    const dim3 block(THREAD_NUM, S);
+    int n_rw = MAX_THREAD_NUM / S;
+    const dim3 block(n_rw, S);
     const dim3 grid(N);
     get_selection_mat_kernel<<<grid, block>>>(
         maxsize, S, nn_offset.data_ptr<int>(), nw_list.data_ptr<float>(),
