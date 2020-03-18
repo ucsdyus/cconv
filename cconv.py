@@ -11,8 +11,8 @@ class CConvConfig(object):
         self.MaxSize = max_size
         self.SelectMat = None
 
-    def update(self, nn_offset, nw_list):
-        self.SelectMat = fp.selection_mat_patch(nn_offset, nw_list, self.MaxSize, self.SpatialSize)
+    def update(self, fp_config):
+        self.SelectMat = fp.selection_mat_patch(fp_config, self.MaxSize, self.SpatialSize)
 
 
 class CConv(nn.Module):
