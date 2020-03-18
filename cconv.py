@@ -26,8 +26,12 @@ class CConv(nn.Module):
 
         self.weight = nn.Parameter(
             torch.Tensor(1, 1, self.config.SpatialSize, ch_out * ch_in), requires_grad=True)
+        self.bias = nn.Parameter(
+            torch.Tensor(1, ch_out, 1), requires_grad=True)
 
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        bounds = 1.0 / math.sqrt(ch_in)
+        init.uniform_(self.bias, -bounds, bounds)
 
     def forward(self, feat_in):
         assert len(feat_in.size()) == 3, "inputs expect 3 dim get %d instead" % len(feat_in.size())
@@ -38,7 +42,7 @@ class CConv(nn.Module):
             self.config.SelectMat, self.weight).view(-1, self.config.MaxSize, self.ch_out, self.ch_in)
         # N x Cout x 1
         feat_out = torch.matmul(patch_weight, patch_feat).sum(axis=1).view(-1, self.ch_out, 1)
-        return feat_out
+        return feat_out + self.bias
 
 
 class CConvFixed(nn.Module):
@@ -52,8 +56,12 @@ class CConvFixed(nn.Module):
 
         self.weight = nn.Parameter(
             torch.Tensor(1, 1, self.config.SpatialSize, ch_out * ch_in), requires_grad=True)
+        self.bias = nn.Parameter(
+            torch.Tensor(1, ch_out, 1), requires_grad=True)
 
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        bounds = 1.0 / math.sqrt(ch_in)
+        init.uniform_(self.bias, -bounds, bounds)
 
     def forward(self, fixed_in):
         assert len(fixed_in.size()) == 3, "inputs expect 3 dim get %d instead" % len(fixed_in.size())
@@ -65,4 +73,4 @@ class CConvFixed(nn.Module):
             self.config.SelectMat, self.weight).view(-1, self.config.MaxSize, self.ch_out, self.ch_in)
         # N x Cout x 1
         fixed_out = torch.matmul(patch_weight, patch_fixed).sum(axis=1).view(-1, self.ch_out, 1)
-        return fixed_out
+        return fixed_out + self.bias
