@@ -26,9 +26,12 @@ class CConv(nn.Module):
 
         self.weight = nn.Parameter(
             torch.Tensor(1, 1, self.config.SpatialSize, ch_out * ch_in), requires_grad=True)
-        # print(self.weight.size())
+        self.bias = nn.Parameter(
+            torch.Tensor(1, ch_out, 1), requires_grad=True)
 
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        bounds = 1.0 / math.sqrt(ch_in)
+        init.uniform_(self.bias, -bounds, bounds)
 
     def forward(self, fp_config, feat_in):
         # N x M x Cin x 1
@@ -37,11 +40,13 @@ class CConv(nn.Module):
         # patch_weight = torch.matmul(
         #     self.config.SelectMat, self.weight).view(-1, self.config.MaxSize, self.ch_out, self.ch_in)
         patch_weight = torch.einsum(
-        	'abij,cdjk->abik', (self.config.SelectMat, self.weight)).view(-1, self.config.MaxSize, self.ch_out, self.ch_in)
+            'abij,cdjk->abik', (self.config.SelectMat, self.weight)).view(
+                -1, self.config.MaxSize, self.ch_out, self.ch_in)
         # N x Cout x 1
         # feat_out = torch.matmul(patch_weight, patch_feat).sum(axis=1).view(-1, self.ch_out, 1)
-        feat_out = torch.einsum('abij,abjk->abik', (patch_weight,patch_feat)).sum(axis=1).view(-1,self.ch_out,1)
-        return feat_out
+        feat_out = torch.einsum(
+            'abij,abjk->abik', (patch_weight, patch_feat)).sum(axis=1).view(-1, self.ch_out, 1)
+        return feat_out + self.bias
 
 
 class CConvFixed(nn.Module):
@@ -55,8 +60,12 @@ class CConvFixed(nn.Module):
 
         self.weight = nn.Parameter(
             torch.Tensor(1, 1, self.config.SpatialSize, ch_out * ch_in), requires_grad=True)
+        self.bias = nn.Parameter(
+            torch.Tensor(1, ch_out, 1), requires_grad=True)
 
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        bounds = 1.0 / math.sqrt(ch_in)
+        init.uniform_(self.bias, -bounds, bounds)
 
     def forward(self, fp_config, fixed_in):
         # N x M x Cin x 1
@@ -68,8 +77,10 @@ class CConvFixed(nn.Module):
         # patch_weight = torch.matmul(
         #     self.config.SelectMat, self.weight).view(-1, self.config.MaxSize, self.ch_out, self.ch_in)
         patch_weight = torch.einsum(
-        	'abij,cdjk->abik', (self.config.SelectMat, self.weight)).view(-1, self.config.MaxSize, self.ch_out, self.ch_in)
+            'abij,cdjk->abik', (self.config.SelectMat, self.weight)).view(
+                -1, self.config.MaxSize, self.ch_out, self.ch_in)
         # N x Cout x 1
         # fixed_out = torch.matmul(patch_weight, patch_fixed).sum(axis=1).view(-1, self.ch_out, 1)
-        fixed_out = torch.einsum('abij,abjk->abik', (patch_weight,patch_fixed)).sum(axis=1).view(-1,self.ch_out,1)
-        return fixed_out
+        fixed_out = torch.einsum(
+            'abij,abjk->abik', (patch_weight, patch_fixed)).sum(axis=1).view(-1, self.ch_out, 1)
+        return fixed_out + self.bias
