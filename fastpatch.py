@@ -4,65 +4,59 @@ from torch.autograd import Function
 import fastpatch_impl as fp_impl
 
 
-class FeatPatchParams:
+class FpParams:
     MaxSize = None
-    NnOffset = None
-    NnList = None
 
-    GradNnOffset = None
-    GradNnList = None
-
-
-class FixedPatchParams:
-    MaxSize = None
-    NnOffset = None
-    NnList = None
+class FpConfig(object):
+    def __init__(self, nn_offset, nn_list, nw_list, grad_nn_offset, grad_nn_list):
+        self.nn_offset = nn_offset
+        self.nn_list = nn_list
+        self.nw_list = nw_list
+        self.grad_nn_offset = grad_nn_offset
+        self.grad_nn_list = grad_nn_list
 
 
 class FeatPatchFn(Function):
 
     @staticmethod
-    def forward(ctx, feat):
+    def forward(ctx, fp_config, feat):
         patchfeat = fp_impl.feat_forward(
-            feat, FeatPatchParams.NnOffset,
-            FeatPatchParams.NnList, FeatPatchParams.MaxSize)
+            feat, fp_config.nn_offset,
+            fp_config.nn_list, FpParams.MaxSize)
+        ctx.save_for_backward(fp_config.grad_nn_offset, fp_config.grad_nn_list)
         return patchfeat
 
     @staticmethod
     def backward(ctx, grad_patchfeat):
+        grad_nn_offset, grad_nn_list = ctx.saved_tensors
         grad_feat = None
 
-        if ctx.needs_input_grad[0]:
+        # print("start bp fp", ctx.needs_input_grad)
+        print(torch.sum(grad_patchfeat != grad_patchfeat))
+        if ctx.needs_input_grad[1]:
             grad_feat = fp_impl.feat_backward(
-                grad_patchfeat, FeatPatchParams.GradNnOffset,
-                FeatPatchParams.GradNnList, FeatPatchParams.MaxSize)
-        return grad_feat
+                grad_patchfeat, grad_nn_offset, grad_nn_list, FpParams.MaxSize)
+        # print("end bp fp", grad_feat)
+        print(torch.sum(grad_feat != grad_feat))
+        return None, grad_feat
 
 
-def update_feat_config(max_size, nn_offset, nn_list, grad_nn_offset, grad_nn_list):
-    FeatPatchParams.MaxSize = max_size
-    FeatPatchParams.NnOffset = nn_offset
-    FeatPatchParams.NnList = nn_list
-
-    FeatPatchParams.GradNnOffset = grad_nn_offset
-    FeatPatchParams.GradNnList = grad_nn_list
+def set_maxsize(max_size):
+    FpParams.MaxSize = max_size
 
 
-def update_fixed_config(max_size, nn_offset, nn_list):
-    FixedPatchParams.MaxSize = max_size
-    FixedPatchParams.NnOffset = nn_offset
-    FixedPatchParams.NnList = nn_list
+def build_config(nn_offset, nn_list, nw_list, grad_nn_offset, grad_nn_list):
+    return FpConfig(nn_offset, nn_list, nw_list, grad_nn_offset, grad_nn_list)
 
 
 feat_patch = FeatPatchFn.apply
 
 
-def fixed_patch(fixed_in):
+def fixed_patch(fp_config, fixed_in):
     patch_fixed = fp_impl.feat_forward(
-        fixed_in, FixedPatchParams.NnOffset,
-        FixedPatchParams.NnList, FixedPatchParams.MaxSize)
+        fixed_in, fp_config.nn_offset, fp_config.nn_list, FpParams.MaxSize)
     return patch_fixed
 
 
-def selection_mat_patch(nn_offset, nw_list, max_size, spatial):
-    return fp_impl.get_selection_mat(nn_offset, nw_list, max_size, spatial)
+def selection_mat_patch(fp_config, max_size, spatial):
+    return fp_impl.get_selection_mat(fp_config.nn_offset, fp_config.nw_list, max_size, spatial)

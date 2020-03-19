@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-import fastpatch as fp
+import cconv.fastpatch as fp
 import math
 
 
